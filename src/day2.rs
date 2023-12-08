@@ -71,3 +71,17 @@ pub fn run(input: &str) -> usize {
         .map(|g| g.id)
         .sum();
 }
+
+pub fn run_2(input: &str) -> usize {
+    let lines = input.lines().map(|x| parse(x));
+
+    return lines
+        .flatten()
+        .map(|g| {
+            let (red, green, blue) = g.max_s();
+            let power = red * green * blue;
+            println!("{:?}: {:?}", power, g);
+            power
+        })
+        .sum();
+}
