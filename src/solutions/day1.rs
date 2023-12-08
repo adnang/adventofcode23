@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::str::{FromStr, Lines};
+use std::str::FromStr;
 use regex::{Captures, Regex};
 
 pub fn calc(input: &str) -> Option<usize> {
