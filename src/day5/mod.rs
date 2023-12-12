@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::str::FromStr;
+use std::str::{FromStr, Lines};
 
 #[derive(Debug)]
 struct RangeMap {
@@ -86,7 +86,7 @@ fn parse(input: &str) -> Almanac {
     };
 }
 
-fn get_range_map(lines: &mut std::str::Lines<'_>) -> Vec<RangeMap> {
+fn get_range_map(lines: &mut Lines<'_>) -> Vec<RangeMap> {
     let mut vec: Vec<RangeMap> = vec![];
     while let Some(line) = lines.next() {
         let extract = R_RANGEMAP.captures(line).map(|cap| cap.extract());
