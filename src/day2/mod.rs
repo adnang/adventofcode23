@@ -1,12 +1,12 @@
-use std::str::FromStr;
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct Round {
     red: usize,
     blue: usize,
-    green: usize
+    green: usize,
 }
 
 #[derive(Debug)]
@@ -15,9 +15,8 @@ pub struct Game {
     rounds: Vec<Round>,
 }
 
-
 impl Game {
-    fn max_s(self: &Game) -> (usize, usize, usize ) {
+    fn max_s(self: &Game) -> (usize, usize, usize) {
         let sr = self.rounds.iter().map(|x| x.red).max().unwrap_or(0);
         let sg = self.rounds.iter().map(|x| x.green).max().unwrap_or(0);
         let sb = self.rounds.iter().map(|x| x.blue).max().unwrap_or(0);
@@ -31,7 +30,6 @@ lazy_static! {
 }
 
 pub fn parse(line: &str) -> Option<Game> {
-
     let lr: Vec<&str> = line.split(":").collect();
 
     let c = GR.captures(lr[0])?;
@@ -41,8 +39,12 @@ pub fn parse(line: &str) -> Option<Game> {
     let gs: Vec<&str> = lr[1].split(";").collect();
     let mut rounds = vec![];
     for g in gs {
-        let cols : Vec<&str> = g.split(",").collect();
-        let mut r: Round = Round{blue: 0, red: 0, green: 0}; 
+        let cols: Vec<&str> = g.split(",").collect();
+        let mut r: Round = Round {
+            blue: 0,
+            red: 0,
+            green: 0,
+        };
         for col in cols {
             let (_, [count, color]) = RR.captures(col).map(|cap| cap.extract())?;
             match color {
@@ -54,14 +56,13 @@ pub fn parse(line: &str) -> Option<Game> {
         }
         rounds.push(r)
     }
-    Some(Game{id, rounds})
+    Some(Game { id, rounds })
 }
 
 pub fn run(input: &str) -> usize {
-    let lines = input.lines().map(|x| parse(x));
-
-    return lines
-        .flatten()
+    return input
+        .lines()
+        .flat_map(|x| parse(x))
         .filter(|g| {
             let (red, green, blue) = g.max_s();
             let success = red <= 12 && green <= 13 && blue <= 14;
@@ -73,10 +74,9 @@ pub fn run(input: &str) -> usize {
 }
 
 pub fn run_2(input: &str) -> usize {
-    let lines = input.lines().map(|x| parse(x));
-
-    return lines
-        .flatten()
+    return input
+        .lines()
+        .flat_map(|x| parse(x))
         .map(|g| {
             let (red, green, blue) = g.max_s();
             let power = red * green * blue;
