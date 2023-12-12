@@ -1,5 +1,6 @@
-mod day4;
 use std::fs;
+
+use adventofcode23::day4;
 
 fn main() {
     let d = std::env::current_dir().unwrap();
