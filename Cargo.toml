@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 average = "0.14.1"
+indexmap = "2.1.0"
 lazy_static = "1.4.0"
 regex = "1.10.2"

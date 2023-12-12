@@ -1,10 +1,10 @@
+use indexmap::IndexMap;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::str::FromStr;
 
 #[derive(Debug)]
 struct Card {
-    name: String,
     winning: Vec<usize>,
     mine: Vec<usize>,
 }
@@ -30,21 +30,40 @@ pub fn calc(input: &str) -> Option<usize> {
     Some(pts)
 }
 
+pub fn calc_2(input: &str) -> Option<usize> {
+    let cards = parse(input);
+
+    let mut counts: IndexMap<usize, usize> = IndexMap::new();
+    for (idx, card) in cards.iter().enumerate() {
+        *counts.entry(idx + 1).or_insert(0) += 1;
+        let winners = card
+            .mine
+            .iter()
+            .filter(|&c| card.winning.contains(c))
+            .count();
+
+        for w in 1..=winners {
+            *counts.entry(idx + w + 1).or_insert(0) += counts[&(idx + 1)];
+        }
+        //println!("{:?}", counts);
+    }
+
+    println!("{:?}", counts);
+
+    Some(counts.values().sum())
+}
+
 fn parse(input: &str) -> Vec<Card> {
     input
         .lines()
         .map(|l| {
             let mut parts = l.split(":");
-            let (card, rest) = (parts.next(), parts.next());
+            let (_, rest) = (parts.next(), parts.next());
             parts = rest.unwrap().split("|");
             let (winning_str, mine_str) = (parts.next(), parts.next());
             let winning = parse_nums(winning_str.unwrap());
             let mine = parse_nums(mine_str.unwrap());
-            return Card {
-                name: String::from(card.unwrap()),
-                winning,
-                mine,
-            };
+            return Card { winning, mine };
         })
         .collect::<Vec<Card>>()
 }
