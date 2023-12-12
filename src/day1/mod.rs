@@ -1,18 +1,16 @@
+use regex::{Captures, Regex};
 use std::collections::HashMap;
 use std::str::FromStr;
-use regex::{Captures, Regex};
 
 pub fn calc(input: &str) -> Option<usize> {
-    let lines= input.lines().map(String::from).collect();
+    let lines = input.lines().map(String::from).collect();
 
     map_lines(lines)
 }
 
 fn map_lines(lines: Vec<String>) -> Option<usize> {
     fn extract(cap: Captures) -> Option<usize> {
-        cap.get(1)
-            .map(|t| { usize::from_str(t.as_str()) })?
-            .ok()
+        cap.get(1).map(|t| usize::from_str(t.as_str()))?.ok()
     }
 
     let r1 = Regex::new(r"[a-z]*(\d).*").unwrap();
@@ -49,16 +47,19 @@ pub fn calc_2(input: &str) -> Option<usize> {
         ("six", "six6six"),
         ("seven", "seven7seven"),
         ("eight", "eight8eight"),
-        ("nine", "nine9nine")
+        ("nine", "nine9nine"),
     ]);
 
-    let new_in = input.lines().map(|l| {
-        let mut r = String::from(l);
-        for (k, v) in matchers.iter() {
-            r = r.replace(k, v);
-        }
-        r
-    }).collect();
+    let new_in = input
+        .lines()
+        .map(|l| {
+            let mut r = String::from(l);
+            for (k, v) in matchers.iter() {
+                r = r.replace(k, v);
+            }
+            r
+        })
+        .collect();
 
     return map_lines(new_in);
 }
