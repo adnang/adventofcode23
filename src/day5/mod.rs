@@ -12,10 +12,8 @@ struct RangeMap {
     src: usize,
     rng: usize,
 }
-
 #[derive(Debug)]
 struct Almanac {
-    seeds: Vec<usize>,
     seed_to_soil: Vec<RangeMap>,
     soil_to_fertilizer: Vec<RangeMap>,
     fertilizer_to_water: Vec<RangeMap>,
@@ -27,20 +25,20 @@ struct Almanac {
 
 lazy_static! {
     static ref R_SEEDS: Regex = Regex::new(r"\s(\d+)").unwrap();
+    static ref R_SEEDS_2: Regex = Regex::new(r"\s(\d+)\s(\d+)").unwrap();
     static ref R_RANGEMAP: Regex = Regex::new(r"(\d+) (\d+) (\d+)").unwrap();
 }
 
-fn parse(input: &str) -> Almanac {
-    // single `lines` iterator to use throughout parsing
-    let mut lines = input.lines();
-    let seeds_str = lines.next().unwrap();
-
+fn parse_seeds_1(seeds_str: &str) -> Vec<usize> {
     let seeds = R_SEEDS
         .captures_iter(seeds_str)
         .flat_map(|x| x.get(1))
         .flat_map(|x| usize::from_str(x.as_str()))
         .collect::<Vec<usize>>();
+    seeds
+}
 
+fn parse_almanac(mut lines: &mut Lines<'_>) -> Almanac {
     let (
         mut seed_to_soil,
         mut soil_to_fertilizer,
@@ -79,7 +77,6 @@ fn parse(input: &str) -> Almanac {
     }
 
     return Almanac {
-        seeds,
         seed_to_soil,
         soil_to_fertilizer,
         fertilizer_to_water,
@@ -115,19 +112,22 @@ fn walk(src: usize, path: &Vec<RangeMap>) -> usize {
 }
 
 pub fn calc(input: &str) -> Option<usize> {
-    let parsed = parse(input);
-    // println!("{:#?}", parsed);
+    let mut lines = input.lines();
+
+    let seeds = parse_seeds_1(lines.next().unwrap());
+    let almanac = parse_almanac(&mut lines);
+    //println!("{:#?}", parsed);
 
     let mut res: HashMap<usize, Vec<usize>> = HashMap::new();
 
-    for seed in parsed.seeds {
-        let soil = walk(seed, &parsed.seed_to_soil);
-        let fertilizer = walk(soil, &parsed.soil_to_fertilizer);
-        let water = walk(fertilizer, &parsed.fertilizer_to_water);
-        let light = walk(water, &parsed.water_to_light);
-        let temperature = walk(light, &parsed.light_to_temperature);
-        let humidity = walk(temperature, &parsed.temperature_to_humidity);
-        let location = walk(humidity, &parsed.humidity_to_location);
+    for seed in seeds {
+        let soil = walk(seed, &almanac.seed_to_soil);
+        let fertilizer = walk(soil, &almanac.soil_to_fertilizer);
+        let water = walk(fertilizer, &almanac.fertilizer_to_water);
+        let light = walk(water, &almanac.water_to_light);
+        let temperature = walk(light, &almanac.light_to_temperature);
+        let humidity = walk(temperature, &almanac.temperature_to_humidity);
+        let location = walk(humidity, &almanac.humidity_to_location);
 
         res.insert(
             seed,
@@ -147,4 +147,77 @@ pub fn calc(input: &str) -> Option<usize> {
     // println!("{:#?}", res);
 
     res.values().flat_map(|vec| vec.last().map(|&u| u)).min()
+}
+
+fn parse_seeds_2(seeds_str: &str) -> Vec<(usize, usize)> {
+    let seeds = R_SEEDS_2
+        .captures_iter(seeds_str)
+        .map(|x| (x.get(1).unwrap().as_str(), x.get(2).unwrap().as_str()))
+        .map(|(start, count)| {
+            (
+                usize::from_str(start).unwrap(),
+                usize::from_str(count).unwrap(),
+            )
+        })
+        .collect::<Vec<(usize, usize)>>();
+
+    seeds
+}
+
+fn to_hash(maps: &Vec<RangeMap>) -> Box<HashMap<usize, usize>> {
+    let mut res = HashMap::new();
+
+    for map in maps {
+        for it in 0..map.rng {
+            res.insert(map.src + it, map.dest + it);
+        }
+    }
+
+    Box::from(res)
+}
+
+pub fn calc_2(input: &str) -> Option<usize> {
+    let mut lines = input.lines();
+    let seeds = parse_seeds_2(lines.next().unwrap());
+    println!("{:#?}", seeds);
+
+    let almanac = parse_almanac(&mut lines);
+    println!("{:#?}", almanac);
+
+    println!("Starting walk");
+
+    let seed_to_soil_hash = to_hash(&almanac.seed_to_soil);
+    println!("Finished seed_to_soil_hash");
+    let soil_to_fertilizer_hash = to_hash(&almanac.soil_to_fertilizer);
+    println!("Finished soil_to_fertilizer_hash");
+    let fertilizer_to_water_hash = to_hash(&almanac.fertilizer_to_water);
+    println!("Finished fertilizer_to_water_hash");
+    let water_to_light_hash = to_hash(&almanac.water_to_light);
+    println!("Finished water_to_light_hash");
+    let light_to_temperature_hash = to_hash(&almanac.light_to_temperature);
+    println!("Finished light_to_temperature_hash");
+    let temperature_to_humidity_hash = to_hash(&almanac.temperature_to_humidity);
+    println!("Finished temperature_to_humidity_hash");
+    let humidity_to_location_hash = to_hash(&almanac.humidity_to_location);
+    println!("Finished humidity_to_location_hash");
+    let mut res = HashMap::new();
+
+    for seed in seeds
+        .iter()
+        .flat_map(|&(start, count)| (start..start + count))
+    {
+        let location = seed_to_soil_hash
+            .get(&seed)
+            .map(|x| soil_to_fertilizer_hash.get(x).unwrap_or(x))
+            .map(|x| fertilizer_to_water_hash.get(x).unwrap_or(x))
+            .map(|x| water_to_light_hash.get(x).unwrap_or(x))
+            .map(|x| light_to_temperature_hash.get(x).unwrap_or(x))
+            .map(|x| temperature_to_humidity_hash.get(x).unwrap_or(x))
+            .map(|x| humidity_to_location_hash.get(x).unwrap_or(x))
+            .unwrap_or(&seed);
+
+        res.insert(seed, *location);
+    }
+
+    res.values().min().map(|&u| u)
 }
