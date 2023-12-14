@@ -1,6 +1,10 @@
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::str::{FromStr, Lines};
+use std::{
+    collections::HashMap,
+    str::{FromStr, Lines},
+    vec,
+};
 
 #[derive(Debug)]
 struct RangeMap {
@@ -55,7 +59,7 @@ fn parse(input: &str) -> Almanac {
             "soil-to-fertilizer map:" => {
                 soil_to_fertilizer = get_range_map(&mut lines);
             }
-            "fertilizer_to_water map:" => {
+            "fertilizer-to-water map:" => {
                 fertilizer_to_water = get_range_map(&mut lines);
             }
             "water-to-light map:" => {
@@ -102,9 +106,45 @@ fn get_range_map(lines: &mut Lines<'_>) -> Vec<RangeMap> {
     vec
 }
 
+fn walk(src: usize, path: &Vec<RangeMap>) -> usize {
+    path.iter()
+        .filter(|x| x.src <= src && src < (x.src + x.rng))
+        .map(|x| x.dest + src - x.src)
+        .next()
+        .unwrap_or(src)
+}
+
 pub fn calc(input: &str) -> Option<usize> {
     let parsed = parse(input);
-    println!("{:?}", parsed);
+    // println!("{:#?}", parsed);
 
-    None
+    let mut res: HashMap<usize, Vec<usize>> = HashMap::new();
+
+    for seed in parsed.seeds {
+        let soil = walk(seed, &parsed.seed_to_soil);
+        let fertilizer = walk(soil, &parsed.soil_to_fertilizer);
+        let water = walk(fertilizer, &parsed.fertilizer_to_water);
+        let light = walk(water, &parsed.water_to_light);
+        let temperature = walk(light, &parsed.light_to_temperature);
+        let humidity = walk(temperature, &parsed.temperature_to_humidity);
+        let location = walk(humidity, &parsed.humidity_to_location);
+
+        res.insert(
+            seed,
+            vec![
+                soil,
+                fertilizer,
+                water,
+                light,
+                temperature,
+                humidity,
+                location,
+            ],
+        );
+    }
+
+    println!("Computed >>>>");
+    // println!("{:#?}", res);
+
+    res.values().flat_map(|vec| vec.last().map(|&u| u)).min()
 }
